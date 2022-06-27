@@ -1,0 +1,25 @@
+global:
+  modfified-by: change
+
+hosts:
+  Test.example.de:
+    user: max
+
+  dev.example.de:
+    user: joe
+    color: blue
+
+  monitor.example.de:
+    service: MONITOR
+
+  www.example.com:
+    user: max
+    service: WWW
+
+  nested.example.com:
+    something:
+      user: joe
+
+  internal.example.com:
+    user: joe
+    service: MONITOR

@@ -27,7 +27,6 @@ def baselist(obj,output):
     output_conf.data = obj['input_conf'].data
     output_conf.save()
 
-#    click.echo(f"Debug is {'on' if ctx.obj['DEBUG'] else 'off'}")
 
 
 
