@@ -1,4 +1,7 @@
+# some comment
+
 www.example.com:
+  # example comment
   info: Some example web service in US
 
 mail.example.com:

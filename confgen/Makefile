@@ -1,5 +1,5 @@
 APP=confgen.py
-PYTHON_MODULES=click
+PYTHON_MODULES=click PyYAML ruamel.yaml
 VENV=.venv
 
 all: install

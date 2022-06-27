@@ -4,7 +4,7 @@ import os
 import sys
 import logging
 import copy
-import yaml
+import ruamel.yaml
 import click
 
 
@@ -41,6 +41,10 @@ class YamlConf:
     def __init__(self, file):
         self.data = {}
         self.modified = False
+        self.yaml = ruamel.yaml.YAML(typ='safe')
+        self.yaml.top_level_colon_align = True
+        self.yaml.indent = 2
+        self.yaml.mapping = 2
         if isinstance(file, io.BufferedReader) or isinstance(file, io.BufferedRandom):
             self.load(file)
         else:
@@ -50,7 +54,7 @@ class YamlConf:
     def load(self, file):
         self.filename = file.name
         logging.info(f"Reading {self.filename}")
-        self.data = yaml.safe_load(file)
+        self.data = self.yaml.load(file)
         self.label = os.path.basename( os.path.splitext(self.filename)[0] )
         logging.debug(f"Read Data {self.label}:\n{self}")
 
@@ -59,11 +63,13 @@ class YamlConf:
             filename = self.filename
         logging.info(f"Writing {filename}")
         with open(filename, 'w') as file:
-            yaml.safe_dump(self.data, file, sort_keys=False)
+            self.yaml.dump(self.data, file)
         logging.debug(f"Wrote Data {self.label}:\n{self}")
 
     def __str__(self):
-        return yaml.safe_dump(self.data, sort_keys=False)
+        buf = io.StringIO()
+        self.yaml.dump(self.data, buf, )
+        return buf.getvalue()
 
     def add(self, key, value):
         self.data[key] = value
