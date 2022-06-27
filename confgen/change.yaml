@@ -2,7 +2,7 @@ global:
   modfified-by: change
 
 hosts:
-  Test.example.de:
+  test.example.de:
     user: max
 
   dev.example.de:
@@ -23,3 +23,5 @@ hosts:
   internal.example.com:
     user: joe
     service: MONITOR
+    modfified-by: unknown
+

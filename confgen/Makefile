@@ -19,7 +19,8 @@ $(VENV)/.stamp: $(VENV)
 venv-setup: $(VENV)/.stamp
 
 run: $(VENV)/.stamp
-	. $(VENV)/bin/activate && FLASK_ENV=development VERBOSE=2 python3 ./$(APP)
+	#. $(VENV)/bin/activate && python3 ./$(APP)
+	cp -f hostlist.yaml test.yaml; ./confgen.py -i change.yaml -vv baselist -o test.yaml
 
 clean:
 	rm -rf $(VENV)

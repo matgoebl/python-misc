@@ -3,6 +3,7 @@ import io
 import os
 import sys
 import logging
+import copy
 import yaml
 import click
 
@@ -24,15 +25,15 @@ def confgen(ctx, input, verbose):
 def baselist(obj,output):
     output_conf = YamlConf(output)
 
-    output_conf.data = obj['input_conf'].data
+    updates = obj['input_conf'].data
+
+    for key in updates['hosts']:
+        changes = copy.deepcopy(updates['global'])
+        changes.update(copy.deepcopy(updates['hosts'][key]))
+        logging.debug(f"Updating {key} with {changes}")
+        output_conf.merge(key, changes)
+
     output_conf.save()
-
-
-
-
-
-
-
 
 
 
@@ -49,7 +50,7 @@ class YamlConf:
     def load(self, file):
         self.filename = file.name
         logging.info(f"Reading {self.filename}")
-        self.data = yaml.load(file, Loader=yaml.BaseLoader)
+        self.data = yaml.safe_load(file)
         self.label = os.path.basename( os.path.splitext(self.filename)[0] )
         logging.debug(f"Read Data {self.label}:\n{self}")
 
@@ -58,11 +59,23 @@ class YamlConf:
             filename = self.filename
         logging.info(f"Writing {filename}")
         with open(filename, 'w') as file:
-            yaml.dump(self.data, file)
+            yaml.safe_dump(self.data, file, sort_keys=False)
         logging.debug(f"Wrote Data {self.label}:\n{self}")
 
     def __str__(self):
-        return yaml.dump(self.data)
+        return yaml.safe_dump(self.data, sort_keys=False)
+
+    def add(self, key, value):
+        self.data[key] = value
+
+    def remove(self, key):
+        del self.data[key]
+
+    def merge(self, key, value):
+        if key in self.data:
+            self.data[key].update(value)
+        else:
+            self.add(key, value)
 
 
 
