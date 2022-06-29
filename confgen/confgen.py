@@ -21,17 +21,22 @@ def confgen(ctx, input, verbose):
 
 @confgen.command()
 @click.option('-o', '--output', help='Output config.', type=click.File('rb+'))
+@click.option('-r', '--replace/--no-replace', help='Replace affected keys.')
+@click.option('-d', '--delete/--no-delete', help='Only delete affected keys.')
 @click.pass_obj
-def baselist(obj,output):
+def yamllist(obj,output,replace,delete):
     output_conf = YamlConf(output)
 
     updates = obj['input_conf'].data
 
     for key in updates['hosts']:
-        changes = copy.deepcopy(updates['global'])
-        changes.update(copy.deepcopy(updates['hosts'][key]))
-        logging.debug(f"Updating {key} with {changes}")
-        output_conf.merge(key, changes)
+        if replace or delete:
+            output_conf.remove(key)
+        if not delete:
+            changes = copy.deepcopy(updates['global'])
+            changes.update(copy.deepcopy(updates['hosts'][key]))
+            logging.debug(f"Updating {key} with {changes}")
+            output_conf.merge(key, changes)
 
     output_conf.save()
 
@@ -73,7 +78,8 @@ class YamlConf:
         self.data[key] = value
 
     def remove(self, key):
-        del self.data[key]
+        if key in self.data:
+            del self.data[key]
 
     def merge(self, key, value):
         if key in self.data:
