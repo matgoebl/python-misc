@@ -41,10 +41,8 @@ class YamlConf:
     def __init__(self, file):
         self.data = {}
         self.modified = False
-        self.yaml = ruamel.yaml.YAML(typ='safe')
-        self.yaml.top_level_colon_align = True
-        self.yaml.indent = 2
-        self.yaml.mapping = 2
+        self.yaml = ruamel.yaml.YAML()
+        self.yaml.indent(mapping=2, sequence=4, offset=2)
         if isinstance(file, io.BufferedReader) or isinstance(file, io.BufferedRandom):
             self.load(file)
         else:
@@ -68,7 +66,7 @@ class YamlConf:
 
     def __str__(self):
         buf = io.StringIO()
-        self.yaml.dump(self.data, buf, )
+        self.yaml.dump(self.data, buf)
         return buf.getvalue()
 
     def add(self, key, value):
