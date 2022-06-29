@@ -19,10 +19,9 @@ $(VENV)/.stamp: $(VENV)
 venv-setup: $(VENV)/.stamp
 
 run: $(VENV)/.stamp
-	#. $(VENV)/bin/activate && python3 ./$(APP)
 	cp -f hostlist.yaml test.yaml
-	./confgen.py -i change.yaml -vv yamllist -o test.yaml -r
-	diff -u hostlist.yaml test.yaml
+	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv yamllist -o test.yaml -r
+	-diff -u hostlist.yaml test.yaml
 
 clean:
 	rm -rf $(VENV)

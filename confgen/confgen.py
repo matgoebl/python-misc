@@ -16,11 +16,13 @@ def confgen(ctx, input, verbose):
     """Config generator."""
     logging.basicConfig(level=logging.WARNING-10*verbose,handlers=[logging.StreamHandler()],format="[%(levelname)s] %(message)s")
     ctx.obj = {}
-    ctx.obj['input_conf'] = YamlConf(input)
+    ctx.obj['input_conf'] = {}
+    if input:
+        ctx.obj['input_conf'] = YamlConf(input)
 
 
 @confgen.command()
-@click.option('-o', '--output', help='Output config.', type=click.File('rb+'))
+@click.option('-o', '--output', help='Output config.', required=True, type=click.File('rb+'))
 @click.option('-r', '--replace/--no-replace', help='Replace affected keys.')
 @click.option('-d', '--delete/--no-delete', help='Only delete affected keys.')
 @click.pass_obj
@@ -42,7 +44,28 @@ def yamllist(obj,output,replace,delete):
 
 
 
-class YamlConf:
+class KeyedConf:
+    def __str__(self):
+        buf = io.StringIO()
+        yaml = ruamel.yaml.YAML()
+        yaml.dump(self.data, buf)
+        return buf.getvalue()
+
+    def add(self, key, value):
+        self.data[key] = value
+
+    def remove(self, key):
+        if key in self.data:
+            del self.data[key]
+
+    def merge(self, key, value):
+        if key in self.data:
+            self.data[key].update(value)
+        else:
+            self.add(key, value)
+
+
+class YamlConf(KeyedConf):
     def __init__(self, file):
         self.data = {}
         self.modified = False
@@ -68,24 +91,6 @@ class YamlConf:
         with open(filename, 'w') as file:
             self.yaml.dump(self.data, file)
         logging.debug(f"Wrote Data {self.label}:\n{self}")
-
-    def __str__(self):
-        buf = io.StringIO()
-        self.yaml.dump(self.data, buf)
-        return buf.getvalue()
-
-    def add(self, key, value):
-        self.data[key] = value
-
-    def remove(self, key):
-        if key in self.data:
-            del self.data[key]
-
-    def merge(self, key, value):
-        if key in self.data:
-            self.data[key].update(value)
-        else:
-            self.add(key, value)
 
 
 
