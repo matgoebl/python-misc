@@ -5,6 +5,7 @@ import sys
 import logging
 import copy
 import ruamel.yaml
+import pyhocon
 import click
 
 
@@ -43,6 +44,26 @@ def yamllist(obj,output,replace,delete):
     output_conf.save()
 
 
+@confgen.command()
+@click.option('-o', '--output', help='Output config.', required=True, type=click.File('rb+'))
+@click.option('-r', '--replace/--no-replace', help='Replace affected keys.')
+@click.option('-d', '--delete/--no-delete', help='Only delete affected keys.')
+@click.pass_obj
+def hoconlist(obj,output,replace,delete):
+    output_conf = HoconConf(output)
+
+    updates = obj['input_conf'].data
+
+    for key in updates['hosts']:
+        if replace or delete:
+            output_conf.remove(key)
+        if not delete:
+            changes = copy.deepcopy(updates['global'])
+            changes.update(copy.deepcopy(updates['hosts'][key]))
+            logging.debug(f"Updating {key} with {changes}")
+            output_conf.merge(key, changes)
+
+    logging.info(f"Output:\n{output_conf}")
 
 class KeyedConf:
     def __str__(self):
@@ -92,6 +113,48 @@ class YamlConf(KeyedConf):
             self.yaml.dump(self.data, file)
         logging.debug(f"Wrote Data {self.label}:\n{self}")
 
+
+class HoconConf(KeyedConf):
+    def __init__(self, file):
+        self.data = {}
+        self.modified = False
+        if isinstance(file, io.BufferedReader) or isinstance(file, io.BufferedRandom):
+            self.load(file.name)
+        else:
+            self.load(file)
+
+    def load(self, filename):
+        self.filename = filename
+        logging.info(f"Reading {self.filename}")
+        self.data = pyhocon.ConfigFactory.parse_file(self.filename)
+        self.label = os.path.basename( os.path.splitext(self.filename)[0] )
+        logging.debug(f"Read Data {self.label}:\n{self}")
+
+    def __str__(self):
+        data = to_dict(self.data.as_plain_ordered_dict())
+        buf = io.StringIO()
+        yaml = ruamel.yaml.YAML()
+        yaml.dump(data, buf)
+        return buf.getvalue()
+
+    def add(self, key, value):
+        self.data.put(key,value)
+
+    def remove(self, key):
+        self.data.pop(key, default=None)
+
+    def merge(self, key, value):
+        if self.data.get(key, default=None):
+            self.data.resolve({key:value})
+        else:
+            self.data.put(key,value)
+
+
+def to_dict(val):
+    for k, v in val.items():
+        if isinstance(v, dict):
+            val[k] = to_dict(v)
+    return dict(val)
 
 
 if __name__ == '__main__':

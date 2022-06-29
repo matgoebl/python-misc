@@ -1,5 +1,5 @@
 APP=confgen.py
-PYTHON_MODULES=click PyYAML ruamel.yaml
+PYTHON_MODULES=click PyYAML ruamel.yaml pyhocon
 VENV=.venv
 
 all: install
@@ -18,10 +18,13 @@ $(VENV)/.stamp: $(VENV)
 
 venv-setup: $(VENV)/.stamp
 
-run: $(VENV)/.stamp
+test_yaml: $(VENV)/.stamp
 	cp -f hostlist.yaml test.yaml
 	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv yamllist -o test.yaml -r
 	-diff -u hostlist.yaml test.yaml
+
+test_hocon: $(VENV)/.stamp
+	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv hoconlist -o tree.conf
 
 clean:
 	rm -rf $(VENV)
@@ -33,4 +36,4 @@ distclean: clean
 
 install:
 
-.PHONY: all venv-setup run clean distclean install
+.PHONY: all venv-setup clean distclean install
