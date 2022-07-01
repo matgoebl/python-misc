@@ -20,7 +20,7 @@ venv-setup: $(VENV)/.stamp
 
 test_yaml: $(VENV)/.stamp
 	cp -f hostlist.yaml test.yaml
-	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv yamllist -o test.yaml -r
+	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv yamllist -o test.yaml --mode merge
 	-diff -u hostlist.yaml test.yaml
 
 test_hocon: $(VENV)/.stamp

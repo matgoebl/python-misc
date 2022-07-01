@@ -25,22 +25,26 @@ def confgen(ctx, input, verbose):
 
 @confgen.command()
 @click.option('-o', '--output', help='Output config.', required=True, type=click.File('rb+'))
-@click.option('-r', '--replace/--no-replace', help='Replace affected keys.')
-@click.option('-d', '--delete/--no-delete', help='Only delete affected keys.')
+@click.option('-m', '--mode', default='merge', type=click.Choice(['merge', 'replace', 'add', 'delete'], case_sensitive=False))
 @click.pass_obj
-def yamllist(obj,output,replace,delete):
+def yamllist(obj,output,mode):
+    print(mode)
     output_conf = YamlConf(output)
 
     updates = obj['input_conf'].data
 
     for key in updates['hosts']:
-        if replace or delete:
+        if mode == 'replace' or mode == 'delete':
             output_conf.remove(key)
-        if not delete:
-            changes = copy.deepcopy(updates['global'])
-            changes.update(copy.deepcopy(updates['hosts'][key]))
-            logging.debug(f"Updating {key} with {changes}")
+        if mode == 'delete':
+            continue
+        changes = copy.deepcopy(updates['global'])
+        changes.update(copy.deepcopy(updates['hosts'][key]))
+        logging.debug(f"Updating {key} with {changes}")
+        if mode == 'merge':
             output_conf.merge(key, changes)
+        if mode == 'add' or mode == 'replace':
+            output_conf.add(key, changes)
 
     output_conf.save()
 
@@ -78,6 +82,8 @@ class KeyedConf:
         return buf.getvalue()
 
     def add(self, key, value):
+        if key in self.data:
+            raise Exception(f"Adding {key} failed, because it already exists.")
         self.data[key] = value
 
     def remove(self, key):
