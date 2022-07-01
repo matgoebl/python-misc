@@ -7,6 +7,7 @@ import copy
 import ruamel.yaml
 import pyhocon
 import click
+import collections
 
 
 @click.group()
@@ -64,6 +65,10 @@ def hoconlist(obj,output,replace,delete):
             output_conf.merge(key, changes)
 
     logging.info(f"Output:\n{output_conf}")
+
+    logging.info(f"HOCON Output:\n{pyhocon.HOCONConverter.to_hocon(output_conf.data)}")
+
+
 
 class KeyedConf:
     def __str__(self):
@@ -138,16 +143,27 @@ class HoconConf(KeyedConf):
         return buf.getvalue()
 
     def add(self, key, value):
-        self.data.put(key,value)
+        if self.data.get(key, default=None):
+            raise Exception(f"Adding {key} failed, because it already exists.")
+        self.merge(key, value)
 
     def remove(self, key):
         self.data.pop(key, default=None)
 
     def merge(self, key, value):
-        if self.data.get(key, default=None):
-            self.data.resolve({key:value})
+        ct = to_conftree(key, value)
+        self.data = pyhocon.ConfigTree.merge_configs(self.data, ct)
+
+
+def to_conftree(basekey, val, ct=None):
+    if not ct:
+        ct = pyhocon.ConfigTree()
+    for k, v in val.items():
+        if isinstance(v, dict) or isinstance(v, collections.OrderedDict):
+            to_conftree(basekey + "." + k, v, ct)
         else:
-            self.data.put(key,value)
+            ct.put(basekey + "." + k, v)
+    return ct
 
 
 def to_dict(val):
