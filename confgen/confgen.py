@@ -25,7 +25,7 @@ def confgen(ctx, input, verbose):
 
 @confgen.command()
 @click.option('-o', '--output', help='Output config.', required=True, type=click.File('rb+'))
-@click.option('-m', '--mode', default='merge', type=click.Choice(['merge', 'replace', 'add', 'delete'], case_sensitive=False))
+@click.option('-m', '--mode', default='merge', type=click.Choice(['merge', 'replace', 'add', 'delete', 'filter'], case_sensitive=False))
 @click.pass_obj
 def yamllist(obj,output,mode):
     print(mode)
@@ -33,18 +33,23 @@ def yamllist(obj,output,mode):
 
     updates = obj['input_conf'].data
 
-    for key in updates['hosts']:
-        if mode == 'replace' or mode == 'delete':
-            output_conf.remove(key)
-        if mode == 'delete':
-            continue
-        changes = copy.deepcopy(updates['global'])
-        changes.update(copy.deepcopy(updates['hosts'][key]))
-        logging.debug(f"Updating {key} with {changes}")
-        if mode == 'merge':
-            output_conf.merge(key, changes)
-        if mode == 'add' or mode == 'replace':
-            output_conf.add(key, changes)
+    if mode == 'filter':
+        for key in output_conf.keys():
+            if not key in updates['hosts']:
+                output_conf.remove(key)
+    else:
+        for key in updates['hosts']:
+            if mode == 'replace' or mode == 'delete':
+                output_conf.remove(key)
+            if mode == 'delete':
+                continue
+            changes = copy.deepcopy(updates['global'])
+            changes.update(copy.deepcopy(updates['hosts'][key]))
+            logging.debug(f"Updating {key} with {changes}")
+            if mode == 'merge':
+                output_conf.merge(key, changes)
+            if mode == 'add' or mode == 'replace':
+                output_conf.add(key, changes)
 
     output_conf.save()
 
@@ -95,6 +100,9 @@ class KeyedConf:
             self.data[key].update(value)
         else:
             self.add(key, value)
+
+    def keys(self):
+        return list(self.data.keys())
 
 
 class YamlConf(KeyedConf):
