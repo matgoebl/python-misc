@@ -1,0 +1,33 @@
+
+mail.example.com:
+  info: Some example mail service in US
+
+www.example.de:
+  info: Some example web service in Germany
+
+# This is a DE test
+mail.example.de:
+  info: Some example mail service in Germany
+test.example.de:
+  modified-by: change
+  user: max
+dev.example.de:
+  modified-by: change
+  user: joe
+  color: blue
+monitor.example.de:
+  modified-by: change
+  service: MONITOR
+www.example.com:
+  modified-by: change
+  user: max
+  service: WWW
+nested.example.com:
+  modified-by: change
+  something:
+
+    user: joe
+internal.example.com:
+  modified-by: unknown
+  user: joe
+  service: MONITOR

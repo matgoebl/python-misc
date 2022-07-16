@@ -17,9 +17,8 @@ mail.example.de:
 test.example.de:
   info: Test setup
 
-nested.example.com:
-  info: Nested tags working?
-
 monitor.example.de:
   info: Monitoring system
 
+nested.example.com:
+  info: Nested tags working?

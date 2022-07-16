@@ -4,16 +4,6 @@ www.example.com:
   # example comment
   info: Some example web service in US
 
-mail.example.com:
-  info: Some example mail service in US
-
-www.example.de:
-  info: Some example web service in Germany
-
-# This is a DE test
-mail.example.de:
-  info: Some example mail service in Germany
-
 test.example.de:
   info: Test setup
 
@@ -22,4 +12,3 @@ nested.example.com:
 
 monitor.example.de:
   info: Monitoring system
-

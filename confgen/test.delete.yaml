@@ -1,0 +1,10 @@
+
+mail.example.com:
+  info: Some example mail service in US
+
+www.example.de:
+  info: Some example web service in Germany
+
+# This is a DE test
+mail.example.de:
+  info: Some example mail service in Germany

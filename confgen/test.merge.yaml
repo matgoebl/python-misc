@@ -3,6 +3,9 @@
 www.example.com:
   # example comment
   info: Some example web service in US
+  modified-by: change
+  user: max
+  service: WWW
 
 mail.example.com:
   info: Some example mail service in US
@@ -16,10 +19,25 @@ mail.example.de:
 
 test.example.de:
   info: Test setup
+  modified-by: change
+  user: max
 
 nested.example.com:
   info: Nested tags working?
+  modified-by: change
+  something:
+
+    user: joe
 
 monitor.example.de:
   info: Monitoring system
-
+  modified-by: change
+  service: MONITOR
+dev.example.de:
+  modified-by: change
+  user: joe
+  color: blue
+internal.example.com:
+  modified-by: unknown
+  user: joe
+  service: MONITOR

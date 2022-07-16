@@ -16,12 +16,19 @@ $(VENV): requirements.txt
 
 venv: $(VENV)
 
+roundtrip_yaml:
+	. $(VENV)/bin/activate && \
+	 ./$(APP) -i empty.yaml yamllist -i hostlist.yaml -o out.yaml --mode add && \
+	 diff -u hostlist.yaml out.yaml
+
+#empty.yaml
+
 test_yaml: venv
 	. $(VENV)/bin/activate && \
 	 for mode in merge replace add delete filter; do \
-	 ./$(APP) -i change.yaml -vv yamllist -i hostlist.yaml -o test.$$mode.yaml --mode $$mode; \
+	 ./$(APP) -i change.yaml yamllist -i hostlist.yaml -o out.$$mode.yaml --mode $$mode; \
+	 diff -u test.$$mode.yaml out.$$mode.yaml || echo 'TEST FAILED'; \
 	done
-	-diff -u hostlist.yaml test.yaml
 
 test_hocon: venv
 	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv hoconlist -i tree.conf -o out.conf
