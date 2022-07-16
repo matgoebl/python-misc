@@ -12,18 +12,18 @@ requirements.txt:
 $(VENV): requirements.txt
 	python3 -m pip install --user virtualenv
 	python3 -m virtualenv $(VENV) && . $(VENV)/bin/activate && python3 -m pip install -r requirements.txt
-	touch $(VENV)/.stamp
+	touch $(VENV)
 
-$(VENV)/.stamp: $(VENV)
+venv: $(VENV)
 
-venv-setup: $(VENV)/.stamp
-
-test_yaml: $(VENV)/.stamp
-	cp -f hostlist.yaml test.yaml
-	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv yamllist -o test.yaml --mode filter #merge
+test_yaml: venv
+	. $(VENV)/bin/activate && \
+	 for mode in merge replace add delete filter; do \
+	 ./$(APP) -i change.yaml -vv yamllist -i hostlist.yaml -o test.$$mode.yaml --mode $$mode; \
+	done
 	-diff -u hostlist.yaml test.yaml
 
-test_hocon: $(VENV)/.stamp
+test_hocon: venv
 	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv hoconlist -o tree.conf
 
 clean:
@@ -36,4 +36,4 @@ distclean: clean
 
 install:
 
-.PHONY: all venv-setup clean distclean install
+.PHONY: all clean distclean install

@@ -20,8 +20,5 @@ test.example.de:
 monitor.example.de:
   info: Monitoring system
 
-evil.example.com:
-  info: Code injection? <script>alert("bad")</script>,
-
 nested.example.com:
   info: Nested tags working?

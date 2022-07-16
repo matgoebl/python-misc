@@ -7,6 +7,7 @@ hosts:
 
   dev.example.de:
     user: joe
+    # Joes color
     color: blue
 
   monitor.example.de:

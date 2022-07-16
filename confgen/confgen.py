@@ -24,34 +24,18 @@ def confgen(ctx, input, verbose):
 
 
 @confgen.command()
-@click.option('-o', '--output', help='Output config.', required=True, type=click.File('rb+'))
+@click.option('-i', '--input',  help='Input config.',  type=click.File('rb+'), required=True)
+@click.option('-o', '--output', help='Output config.', type=click.File('wb'))
 @click.option('-m', '--mode', default='merge', type=click.Choice(['merge', 'replace', 'add', 'delete', 'filter'], case_sensitive=False))
 @click.pass_obj
-def yamllist(obj,output,mode):
-    print(mode)
-    output_conf = YamlConf(output)
+def yamllist(obj,input, output,mode):
+    output_conf = YamlConf(input)
 
     updates = obj['input_conf'].data
 
-    if mode == 'filter':
-        for key in output_conf.keys():
-            if not key in updates['hosts']:
-                output_conf.remove(key)
-    else:
-        for key in updates['hosts']:
-            if mode == 'replace' or mode == 'delete':
-                output_conf.remove(key)
-            if mode == 'delete':
-                continue
-            changes = copy.deepcopy(updates['global'])
-            changes.update(copy.deepcopy(updates['hosts'][key]))
-            logging.debug(f"Updating {key} with {changes}")
-            if mode == 'merge':
-                output_conf.merge(key, changes)
-            if mode == 'add' or mode == 'replace':
-                output_conf.add(key, changes)
+    output_conf.apply_changeset( updates['hosts'], updates['global'], mode)
 
-    output_conf.save()
+    output_conf.save(output or input)
 
 
 @confgen.command()
@@ -80,6 +64,10 @@ def hoconlist(obj,output,replace,delete):
 
 
 class KeyedConf:
+    def __init__(self):
+        self.data = {}
+        self.modified = False
+
     def __str__(self):
         buf = io.StringIO()
         yaml = ruamel.yaml.YAML()
@@ -88,7 +76,8 @@ class KeyedConf:
 
     def add(self, key, value):
         if key in self.data:
-            raise Exception(f"Adding {key} failed, because it already exists.")
+            #raise Exception(f"Adding {key} failed, because it already exists.")
+            logging.error(f"Adding {key} failed, because it already exists.")
         self.data[key] = value
 
     def remove(self, key):
@@ -104,11 +93,32 @@ class KeyedConf:
     def keys(self):
         return list(self.data.keys())
 
+    def apply_changeset(self, keyed_changes, global_changes, mode):
+        logging.info(f"Apply changeset in mode {mode}")
+        if mode == 'filter':
+            for key in self.keys():
+                if not key in keyed_changes:
+                    self.remove(key)
+        else:
+            for key in keyed_changes:
+                if mode == 'replace' or mode == 'delete':
+                    self.remove(key)
+                if mode == 'delete':
+                    continue
+                changes = copy.deepcopy(global_changes)
+                changes.update(copy.deepcopy(keyed_changes[key]))
+                logging.debug(f"Updating {key} with {changes}")
+                if mode == 'merge':
+                    self.merge(key, changes)
+                if mode == 'add' or mode == 'replace':
+                    self.add(key, changes)
+
+
+
 
 class YamlConf(KeyedConf):
     def __init__(self, file):
-        self.data = {}
-        self.modified = False
+        super().__init__()
         self.yaml = ruamel.yaml.YAML()
         self.yaml.indent(mapping=2, sequence=4, offset=2)
         if isinstance(file, io.BufferedReader) or isinstance(file, io.BufferedRandom):
@@ -124,7 +134,11 @@ class YamlConf(KeyedConf):
         self.label = os.path.basename( os.path.splitext(self.filename)[0] )
         logging.debug(f"Read Data {self.label}:\n{self}")
 
-    def save(self, filename = None):
+    def save(self, file = None):
+        if not isinstance(file, str):
+            filename = file.name
+        else:
+            filename = file
         if not filename:
             filename = self.filename
         logging.info(f"Writing {filename}")
