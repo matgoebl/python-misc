@@ -24,7 +24,7 @@ test_yaml: venv
 	-diff -u hostlist.yaml test.yaml
 
 test_hocon: venv
-	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv hoconlist -o tree.conf
+	. $(VENV)/bin/activate && python3 ./$(APP) -i change.yaml -vv hoconlist -i tree.conf -o out.conf
 
 clean:
 	rm -rf $(VENV)

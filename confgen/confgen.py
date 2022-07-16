@@ -39,27 +39,27 @@ def yamllist(obj,input, output,mode):
 
 
 @confgen.command()
-@click.option('-o', '--output', help='Output config.', required=True, type=click.File('rb+'))
-@click.option('-r', '--replace/--no-replace', help='Replace affected keys.')
-@click.option('-d', '--delete/--no-delete', help='Only delete affected keys.')
+@click.option('-i', '--input',  help='Input config.',  type=click.File('rb+'), required=True)
+@click.option('-o', '--output', help='Output config.', type=click.File('wb'))
+@click.option('-m', '--mode', default='replace', type=click.Choice(['replace', 'delete'], case_sensitive=False))
 @click.pass_obj
-def hoconlist(obj,output,replace,delete):
-    output_conf = HoconConf(output)
+def hoconlist(obj,input,output,mode):
+    output_conf = HoconConf(input)
 
     updates = obj['input_conf'].data
 
+    output_conf.apply_changeset( updates['hosts'], updates['global'], mode)
+
     for key in updates['hosts']:
-        if replace or delete:
+        if mode == 'replace' or mode == 'delete':
             output_conf.remove(key)
-        if not delete:
+        if mode != 'delete':
             changes = copy.deepcopy(updates['global'])
             changes.update(copy.deepcopy(updates['hosts'][key]))
             logging.debug(f"Updating {key} with {changes}")
             output_conf.merge(key, changes)
 
-    logging.info(f"Output:\n{output_conf}")
-
-    logging.info(f"HOCON Output:\n{pyhocon.HOCONConverter.to_hocon(output_conf.data)}")
+    output_conf.save(output or input)
 
 
 
@@ -162,6 +162,16 @@ class HoconConf(KeyedConf):
         self.data = pyhocon.ConfigFactory.parse_file(self.filename)
         self.label = os.path.basename( os.path.splitext(self.filename)[0] )
         logging.debug(f"Read Data {self.label}:\n{self}")
+
+    def save(self, file = None):
+        if not isinstance(file, str):
+            filename = file.name
+        else:
+            filename = file
+        filename = filename or self.filename
+        logging.info(f"Writing {filename}")
+        with open(filename, 'w') as file:
+            file.write(pyhocon.HOCONConverter.to_hocon(self.data))
 
     def __str__(self):
         data = to_dict(self.data.as_plain_ordered_dict())
